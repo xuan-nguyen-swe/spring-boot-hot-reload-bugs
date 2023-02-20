@@ -6,7 +6,8 @@
 ```
 {
   "app": "OK",
-  "lib": "OK"
+  "lib": "OK",
+  "libService": "OK"
 }
 ```
 
@@ -14,12 +15,15 @@
 
 ```
 @Controller
-class HealthController {
+class HealthController(
+  private val libHealthService: LibHealthService,
+) {
   @GetMapping("/health")
   fun health() = ResponseEntity.ok(
     mapOf(
       "app" to "OK 1",
       "lib" to LibHealth.health(),
+      "libService" to libHealthService.health(),
     )
   )
 }
@@ -33,42 +37,27 @@ object LibHealth {
 }
 ```
 
-* Run command `./gradlew :app:compileKotlin`, Spring Boot application should reload successfully
-
-* `GET http://localhost:8080/health` should response
+* Change `LibHealthService` with the new code below
 
 ```
-{
-  "app": "OK 1",
-  "lib": "OK 1"
+@Service
+class LibHealthService {
+  fun health() = "OK 1"
 }
 ```
 
-* Change `LibHealth` with the new code below
+* Run command `./gradlew :app:compileKotlin`
+* Spring should trigger reloading, but fail with error below
 
 ```
-object LibHealth {
-  fun health() = "OK 2"
-}
-```
+2023-02-20T18:39:00.071+01:00 ERROR 24256 --- [  restartedMain] o.s.boot.SpringApplication               : Application run failed
 
-* Run command `./gradlew :app:compileKotlin`, Spring Boot application should reload.
-  This time, it has error while reloading, but still reload successfully at the end.
-
-```
-2023-02-20T17:55:18.990+01:00 ERROR 46860 --- [  restartedMain] o.s.boot.SpringApplication               : Application run failed
-
-java.lang.NullPointerException: Cannot read field "generatedClass" because "data" is null
-        at org.springframework.cglib.proxy.Enhancer.nextInstance(Enhancer.java:783) ~[spring-core-6.0.4.jar:6.0.4]
-        at org.springframework.cglib.core.AbstractClassGenerator.create(AbstractClassGenerator.java:317) ~[spring-core-6.0.4.jar:6.0.4]
-        at org.springframework.cglib.proxy.Enhancer.createHelper(Enhancer.java:562) ~[spring-core-6.0.4.jar:6.0.4]
-        at org.springframework.cglib.proxy.Enhancer.createClass(Enhancer.java:407) ~[spring-core-6.0.4.jar:6.0.4]
-        at org.springframework.context.annotation.ConfigurationClassEnhancer.createClass(ConfigurationClassEnhancer.java:138) ~[spring-context-6.0.4.jar:6.0.4]
-        at org.springframework.context.annotation.ConfigurationClassEnhancer.enhance(ConfigurationClassEnhancer.java:109) ~[spring-context-6.0.4.jar:6.0.4]
-        at org.springframework.context.annotation.ConfigurationClassPostProcessor.enhanceConfigurationClasses(ConfigurationClassPostProcessor.java:514) ~[spring-context-6.0.4.jar:6.0.4]
-        at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanFactory(ConfigurationClassPostProcessor.java:304) ~[spring-context-6.0.4.jar:6.0.4]
-        at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:358) ~[spring-context-6.0.4.jar:6.0.4]
-        at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:150) ~[spring-context-6.0.4.jar:6.0.4]
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to parse configuration class [com.example.demo.app.Application]
+        at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:178) ~[spring-context-6.0.4.jar:6.0.4]
+        at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:398) ~[spring-context-6.0.4.jar:6.0.4]
+        at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:283) ~[spring-context-6.0.4.jar:6.0.4]
+        at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:344) ~[spring-context-6.0.4.jar:6.0.4]
+        at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:115) ~[spring-context-6.0.4.jar:6.0.4]
         at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:745) ~[spring-context-6.0.4.jar:6.0.4]
         at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:565) ~[spring-context-6.0.4.jar:6.0.4]
         at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) ~[spring-boot-3.0.2.jar:3.0.2]
@@ -77,19 +66,16 @@ java.lang.NullPointerException: Cannot read field "generatedClass" because "data
         at org.springframework.boot.SpringApplication.run(SpringApplication.java:308) ~[spring-boot-3.0.2.jar:3.0.2]
         at org.springframework.boot.SpringApplication.run(SpringApplication.java:1302) ~[spring-boot-3.0.2.jar:3.0.2]
         at org.springframework.boot.SpringApplication.run(SpringApplication.java:1291) ~[spring-boot-3.0.2.jar:3.0.2]
-        at com.example.demo.app.ApplicationKt.main(Application.kt:27) ~[main/:na]
+        at com.example.demo.app.ApplicationKt.main(Application.kt:33) ~[main/:na]
         at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
-        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
-        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
-        at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
-        at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:49) ~[spring-boot-devtools-3.0.2.jar:3.0.2]
+        at org.springframework.boot.type.classreading.ConcurrentReferenceCachingMetadataReaderFactory.createMetadataReader(ConcurrentReferenceCachingMetadataReaderFactory.java:86) ~[spring-boot-3.0.2.jar:3.0.2]
+        at org.springframework.boot.type.classreading.ConcurrentReferenceCachingMetadataReaderFactory.getMetadataReader(ConcurrentReferenceCachingMetadataReaderFactory.java:73) ~[spring-boot-3.0.2.jar:3.0.2]
+        at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:81) ~[spring-core-6.0.4.jar:6.0.4]
+        at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:187) ~[spring-context-6.0.4.jar:6.0.4]
+        at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:297) ~[spring-context-6.0.4.jar:6.0.4]
+        at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:243) ~[spring-context-6.0.4.jar:6.0.4]
+        at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:196) ~[spring-context-6.0.4.jar:6.0.4]
+        at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:164) ~[spring-context-6.0.4.jar:6.0.4]
+        ... 18 common frames omitted
 ```
-
-* `GET http://localhost:8080/health` still responses correctly as below
-
-```
-{
-  "app": "OK 1",
-  "lib": "OK 2"
-}
-```
+* `GET http://localhost:8080/health` doesn't work anymore
