@@ -32,7 +32,7 @@ public class LibHealth {
 }
 ```
 
-* Run command `./gradlew :app:compileJava`, Spring Boot application reloads with an error message
+* Run command `./gradlew :app:compileJava`, Spring Boot application should reload.
 
 * `GET http://localhost:8080/health` returns incorrect response
 
